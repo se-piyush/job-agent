@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Piyush Sharma - Resume</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @page { size: A4; margin: 0.9cm 1.2cm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 8.8pt; line-height: 1.32; color: #222; }
+        .header { text-align: center; padding-bottom: 5px; border-bottom: 2px solid #1a365d; margin-bottom: 8px; }
+        .name { font-size: 19pt; font-weight: 700; color: #1a365d; letter-spacing: 0.5px; }
+        .contact-row { font-size: 8.5pt; color: #444; margin-top: 2px; }
+        .contact-row a { color: #1a365d; text-decoration: none; }
+        .section { margin-bottom: 8px; }
+        .section-title { font-size: 9.5pt; font-weight: 700; color: #1a365d; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1.5px solid #1a365d; padding-bottom: 2px; margin-bottom: 5px; }
+        .exp-item { margin-bottom: 7px; }
+        .exp-header { display: flex; justify-content: space-between; align-items: baseline; }
+        .company { font-weight: 700; font-size: 9.5pt; color: #1a365d; }
+        .date { font-size: 8.5pt; color: #555; white-space: nowrap; }
+        .role { font-weight: 600; font-size: 8.8pt; color: #333; font-style: italic; margin-bottom: 1px; }
+        .exp-desc { list-style: disc; padding-left: 15px; }
+        .exp-desc li { margin-bottom: 1px; text-align: justify; text-align-last: left; }
+        .skills-line { font-size: 8.5pt; margin-bottom: 2px; }
+        .skill-cat { font-weight: 700; color: #1a365d; }
+        .summary { text-align: justify; text-align-last: left; }
+        strong { color: #1a365d; }
+        .sub-header { display: flex; justify-content: space-between; align-items: baseline; margin-top: 3px; }
+        .sub-company { font-weight: 700; font-size: 9pt; color: #2c5282; }
+        .edu-line { display: flex; justify-content: space-between; align-items: baseline; }
+        .edu-detail { font-size: 8.5pt; color: #444; margin-top: 2px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="name">Piyush Sharma</div>
+        <div class="contact-row">
+            India | +91 9873302882 |
+            <a href="https://www.linkedin.com/in/se-piyusharma/">linkedin.com/in/se-piyusharma</a> |
+            <a href="https://github.com/se-piyush">github.com/se-piyush</a>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Professional Summary</div>
+        <p class="summary">Backend-focused <strong>Node.js</strong> engineer with 8+ years of experience designing, developing, and maintaining production-grade <strong>backend services and APIs</strong> across fintech, SaaS, and marketplace platforms. Strong command of <strong>TypeScript</strong>, <strong>RESTful API design</strong>, <strong>NestJS</strong>, and <strong>Express.js</strong>, with hands-on expertise in <strong>PostgreSQL</strong>, <strong>MongoDB</strong>, <strong>Redis</strong>, and <strong>event-driven architectures</strong> using <strong>Apache Kafka</strong>. Proven track record of optimising API performance, improving reliability, and delivering clean, well-tested, maintainable code in collaborative cross-functional teams. Comfortable driving <strong>CI/CD pipelines</strong>, containerisation with <strong>Docker</strong>, and cloud deployments on <strong>AWS</strong>. Actively uses <strong>GitHub Copilot</strong> (agentic mode) to accelerate feature delivery and maintain high engineering quality.</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Technical Skills</div>
+        <div class="skills-line"><span class="skill-cat">Languages &amp; Frameworks:</span> <strong>Node.js</strong>, <strong>TypeScript</strong>, JavaScript (ES6+), <strong>NestJS</strong>, <strong>Express.js</strong></div>
+        <div class="skills-line"><span class="skill-cat">APIs &amp; Patterns:</span> <strong>RESTful API Design</strong>, <strong>GraphQL</strong>, <strong>Event-Driven Architecture</strong>, Microservices, BFF</div>
+        <div class="skills-line"><span class="skill-cat">Databases &amp; Caching:</span> <strong>PostgreSQL</strong>, <strong>MongoDB</strong>, <strong>DynamoDB</strong>, <strong>Redis</strong>, Data Modelling, Indexing, Migration</div>
+        <div class="skills-line"><span class="skill-cat">Messaging:</span> <strong>Apache Kafka</strong>, AWS SQS, Webhooks, Event Streaming</div>
+        <div class="skills-line"><span class="skill-cat">Cloud &amp; DevOps:</span> <strong>AWS</strong> (Lambda, RDS, S3, Cognito, CloudWatch, EC2), <strong>Docker</strong>, <strong>Kubernetes</strong>, <strong>GitHub Actions</strong> (CI/CD), Terraform, Helm</div>
+        <div class="skills-line"><span class="skill-cat">Security &amp; AI Tools:</span> OAuth 2.0, JWT, RBAC, API Security, Rate Limiting | <strong>GitHub Copilot</strong> (agentic mode), Claude Sonnet</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Professional Experience</div>
+
+        <!-- Abillion -->
+        <div class="exp-item">
+            <div class="exp-header"><span class="company">Abillion</span><span class="date">Jul 2025 - Nov 2025</span></div>
+            <div class="role">Senior Software Engineer</div>
+            <ul class="exp-desc">
+                <li>Improved marketplace <strong>API performance</strong> for 200K+ MAU by migrating <strong>REST to GraphQL</strong> (<strong>NestJS</strong>, <strong>TypeScript</strong>, <strong>MongoDB</strong>) with <strong>Redis caching</strong> and strategic indexing, eliminating over-fetching and reducing p95 response times.</li>
+                <li>Reduced duplicate pagination code across services to zero by building connection-based pagination for infinite-scroll feeds and abstracting it into a shared module adopted platform-wide — a direct contribution to code reusability and maintainability.</li>
+                <li>Leveraged <strong>GitHub Copilot</strong> in agentic mode with <strong>Claude Sonnet</strong> to accelerate feature delivery, demonstrating effective use of <strong>AI-assisted development</strong> to maintain high engineering productivity in a fast-moving product environment.</li>
+            </ul>
+        </div>
+
+        <!-- Teamified with sub-clients -->
+        <div class="exp-item">
+            <div class="exp-header"><span class="company">Teamified</span><span class="date">Mar 2024 - Jul 2025</span></div>
+            <div class="role">Senior Software Engineer</div>
+
+            <div class="sub-header"><span class="sub-company">ForteGlobal</span><span class="date">Nov 2024 - Jul 2025</span></div>
+            <ul class="exp-desc">
+                <li>Built a secure bulk-upload system (Excel/forms → <strong>PostgreSQL on AWS RDS</strong>) using <strong>Node.js</strong>, <strong>TypeScript</strong>, and <strong>Express.js</strong>, eliminating all manual data-entry operations and enabling thousands of records to be processed per run.</li>
+                <li>Automated $50K/month in contractor payments with zero manual invoicing by integrating <strong>Stripe</strong> and implementing <strong>RBAC</strong> (4 roles) with <strong>AWS Cognito</strong> auth, shipped end-to-end via <strong>CI/CD</strong> on <strong>GitHub Actions</strong>.</li>
+                <li>Cut mean time to detect production incidents by building a configurable observability pipeline that routes severity-filtered errors to Slack with full audit logs retained in <strong>CloudWatch</strong>.</li>
+            </ul>
+
+            <div class="sub-header"><span class="sub-company">Gomist</span><span class="date">Mar 2024 - Nov 2024</span></div>
+            <ul class="exp-desc">
+                <li>Architected a KYC pipeline (Onfido) with Firebase OTP auth to unblock SIM purchases and cash transfers on a $30K+ per-account fintech platform, delivering on schedule for go-live.</li>
+                <li>Achieved zero-touch deployments across 3 environments by building a fully <strong>serverless backend</strong> (<strong>AWS Lambda</strong>, <strong>TypeScript</strong>, <strong>DynamoDB</strong>) and managing all IaC end-to-end with <strong>Terraform</strong>, S3, CloudFront, and <strong>GitHub Actions</strong>.</li>
+                <li>Led a team of 4 (2 backend, 2 frontend) to deliver a complete fintech product for international students, integrating <strong>Razorpay</strong> for payment processing handling $30K+ per student account.</li>
+            </ul>
+        </div>
+
+        <!-- Lifebit -->
+        <div class="exp-item">
+            <div class="exp-header"><span class="company">Lifebit</span><span class="date">Jun 2022 - Jan 2024</span></div>
+            <div class="role">Senior Software Engineer (Contract)</div>
+            <ul class="exp-desc">
+                <li>Made 100% of file downloads auth-gated by replacing vulnerable public <strong>S3</strong> pre-signed URLs with a private server-side proxy <strong>API</strong> that validates requester identity before streaming — closing an unauthenticated access exploit and hardening <strong>API security</strong>.</li>
+                <li>Reduced <strong>AWS</strong> infrastructure costs by 30% by migrating low-frequency services from <strong>EC2</strong> to <strong>serverless</strong> (<strong>AWS Lambda</strong>), and enabled self-serve enterprise access management via <strong>Azure AD SSO</strong> with group-based permissions through Active Directory groups.</li>
+            </ul>
+        </div>
+
+        <!-- OnceHub -->
+        <div class="exp-item">
+            <div class="exp-header"><span class="company">OnceHub</span><span class="date">Jan 2017 - Jun 2022</span></div>
+            <div class="role">Senior Software Engineer (2021-2022) | SDE (2017-2021)</div>
+            <ul class="exp-desc">
+                <li>Eliminated data loss at 1,000+ req/s peak by replacing a crashing webhook processor with a scalable <strong>event-driven pipeline</strong> — <strong>Apache Kafka</strong> publishing to batch consumers that pre-aggregate and persist booking events asynchronously.</li>
+                <li>Cut release cycle time by 90% by migrating a monolith to <strong>microservices</strong>, building an internal <strong>Node.js</strong> bootstrap library, and deploying all services on <strong>Kubernetes</strong> (Azure AKS) with <strong>Helm</strong> charts and automated <strong>CI/CD</strong>.</li>
+                <li>Reduced dashboard load from 8s to 100ms via server-side pagination on booking data, and unified auth across all products with an in-house <strong>OAuth 2.0</strong> server (ORY Hydra, <strong>JWT</strong>, <strong>PostgreSQL</strong>).</li>
+                <li>Blocked brute-force card enumeration attacks by implementing a configurable <strong>rate limiter</strong> on the payment iframe, and automated dynamic pricing billing, eliminating all manual billing processes.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Education</div>
+        <div class="edu-line">
+            <span style="font-weight:700;">Bachelor of Technology (B.Tech) in Information Technology</span>
+            <span class="date">2012 - 2016</span>
+        </div>
+        <div class="edu-detail">Guru Gobind Singh Indraprastha University, Delhi</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+About the job
+Software Engineer - Node JS | MAF Retail
+
+
+
+About the Role
+
+We are looking for a skilled and motivated SDE II - Node.js Developer to join our engineering team. In this role, you will be responsible for developing and maintaining backend services and APIs, delivering high-quality features, and contributing to the scalability and reliability of our applications.
+
+The ideal candidate is a strong hands-on engineer with experience building production-grade applications using Node.js and modern backend technologies. You should be comfortable working in a collaborative environment, participating in technical discussions, and delivering features with a focus on quality and timelines.
+
+
+
+Key Responsibilities
+
+Design, develop, test, and maintain backend services and APIs using Node.js.
+Deliver features and enhancements with a strong focus on quality, performance, and maintainability.
+Collaborate with Product Owners, Frontend Engineers, QA, and DevOps teams throughout the software development lifecycle.
+Write clean, reusable, and well-tested code following engineering best practices.
+Participate in code reviews and contribute to improving code quality across the team.
+Troubleshoot and resolve production issues in a timely manner.
+Contribute to application performance optimization and reliability improvements.
+Participate in technical discussions and contribute to solution design for new features.
+Continuously explore and adopt modern engineering practices, including AI-assisted software development.
+
+
+Must-Have Skills
+
+3–5 years of software development experience.
+2+ years of hands-on experience building backend applications using Node.js.
+Strong knowledge of JavaScript/TypeScript and modern ES6+ features.
+Experience with frameworks such as Express.js, NestJS, Hapi.js, or similar.
+Good understanding of RESTful API design and implementation.
+Experience working with databases such as MongoDB, PostgreSQL, MySQL, or similar.
+Familiarity with messaging and event-driven architectures using Kafka, Azure Event Hub, Azure Service Bus, or similar technologies.
+Experience with caching technologies such as Redis.
+Understanding of CI/CD pipelines, containerization (Docker), and cloud platforms such as Azure, AWS, or GCP.
+Good understanding of data structures, algorithms, and software engineering fundamentals.
+Familiarity with AI-assisted development tools such as GitHub Copilot, ChatGPT, Cursor, or similar, and the ability to use them effectively to improve engineering productivity.
+Strong debugging, problem-solving, and analytical skills
+
+
+Requirements added by the job poster
+
+• 4+ years of work experience with Node.js

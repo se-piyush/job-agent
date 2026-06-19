@@ -1,0 +1,52 @@
+All 10 JDs retrieved. Now let me rigorously evaluate each against Piyush's profile before presenting the final ranked shortlist.
+
+---
+
+## 🔎 Evaluation Summary (Internal Scoring)
+
+| Job | Stack Match | Disqualifiers | Verdict |
+|---|---|---|---|
+| **MoneyGram** `4429068700` | Kafka ✅, AWS ✅, Microservices ✅, MongoDB ✅, Docker/K8s ✅ | **Java required (7+ yrs), Spring Boot required** — Piyush is Node.js | ❌ Eliminated |
+| **Samay Consulting** `4428790412` | Kafka ✅, AWS ✅, PostgreSQL ✅, REST ✅, Docker/K8s ✅ | **Core Java + Spring Boot required** — Node.js not mentioned | ❌ Eliminated |
+| **Paylocity** `4430438834` | Microservices ✅, CI/CD ✅, Backend ✅ | **Python/Django or Java ecosystem explicitly required** — no Node.js/TS | ❌ Eliminated |
+| **Pro5.ai** `4428780837` | None | **Java required**, GCP, computational geometry — completely misaligned | ❌ Eliminated |
+| **Applied Resource Group** `4427841492` | Node.js ✅, TypeScript ✅, PostgreSQL ✅, Redis ✅, AWS ✅, Kafka ✅ | Wants 10+ yrs React/Next.js (5+ yrs req). AI-native focus is fine. | ✅ **Moderate** |
+| **Cheers Interactive** `4430426034` | Node.js ✅, MongoDB ✅, REST ✅, Docker/K8s ✅ | Frontend-heavy (React/Redux 5+ yrs). Backend strong match but role is full-stack parity | ✅ **Moderate** |
+| **CSG** `4409953259` | REST APIs ✅, CI/CD ✅ | **C#/.NET primary**, Jitterbit/ITSM tooling — near-zero stack overlap | ❌ Eliminated |
+| **SourcingXPress/Hashone** `4427951703` | Node.js ✅, REST ✅, AWS ✅, SQL/NoSQL ✅ | **Only 3–5 yrs exp required** (junior role), ₹10-40L salary range grossly undershoots Piyush's seniority | ❌ Eliminated |
+| **Yoti** `4430432013` | Node.js ✅, TypeScript ✅, OAuth/JWT ✅, GraphQL ✅, REST ✅ | 3–6 yrs experience (undershoots), **GoLang required**, role is mid-level | ⚠️ Moderate (weak) |
+| **Spreetail** `4415595177` | REST/Cloud ✅ | **.NET + Python (Must Have)** — not Piyush's stack | ❌ Eliminated |
+
+After full JD evaluation, only **2 listings** clear the bar as genuine matches for Piyush's seniority and stack. Here is the ranked shortlist:
+
+---
+
+## ✅ Ranked Shortlist — Senior Backend Engineer Matches for Piyush Sharma
+
+---
+
+### 1. Senior Lead Software Engineer @ Applied Resource Group — Bangalore Urban, Karnataka, India (Remote)
+**Match:** Moderate
+**Stack overlap:** Node.js, TypeScript, PostgreSQL, Redis, AWS, REST APIs, Microservices, Kafka (implicit in distributed systems), OAuth 2.0, CI/CD
+**Why:** This founding-engineer role explicitly lists Node.js, TypeScript, PostgreSQL, Redis, and AWS alongside distributed systems and microservices architecture — a near-perfect technology overlap with Piyush's 8-year backend career. The role's emphasis on building an AI-native SaaS platform from scratch, integrating with external systems (Slack, Google Workspace), and shaping engineering standards maps directly to his work at ForteGlobal, Gomist, and OnceHub; the primary gap is the 5+ years of Next.js/React they prefer, which is a frontend preference, not a hard blocker for a strong backend candidate.
+**Job ID:** 4427841492  |  **Posted:** 6 hours ago
+
+---
+
+### 2. Full Stack Engineer @ Cheers Interactive — India (Remote)
+**Match:** Moderate
+**Stack overlap:** Node.js, TypeScript (implied), MongoDB, REST APIs, Express, Docker, Kubernetes, Microservices, SDLC/Agile
+**Why:** The backend requirements — Node.js (Express/HAPI), MongoDB, REST APIs, OOP design patterns, Docker/Kubernetes, and unit/integration testing — map cleanly onto Piyush's core stack across multiple roles, especially his API platform work at Abillion and ForteGlobal. The role skews full-stack (React/Redux 5+ yrs on the frontend), which is a mismatch in emphasis, but the backend half is a solid fit; Piyush's React Native and frontend exposure mitigates the gap somewhat.
+**Job ID:** 4430426034  |  **Posted:** 15 hours ago
+
+---
+
+## ⚠️ Notable Near-Miss (Not Recommended)
+
+**Yoti** `4430432013` — Full Stack Engineer — targets 3–6 years of experience and treats GoLang as essential (not just nice-to-have), making it a level and stack mismatch for Piyush despite good overlaps in Node.js, TypeScript, OAuth/JWT, and GraphQL. Not worth pursuing given the seniority ceiling and Go requirement.
+
+---
+
+## 📋 Honest Assessment
+
+> Out of the 10 full JDs reviewed, **the majority of the batch (7/10)** were eliminated due to hard Java/Spring Boot, C#/.NET, or Python/Django primary stack requirements — none of which are in Piyush's toolkit. Only 2 roles produced meaningful stack overlap at the right seniority level, and both are **Moderate** (not Strong) matches due to secondary gaps (frontend weight, AI/LLM emphasis). **A fresh search specifically targeting "Node.js TypeScript Kafka AWS Senior Engineer" or "Backend Engineer NestJS GraphQL" would likely surface stronger matches.**

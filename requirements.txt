@@ -1,0 +1,6 @@
+crewai[anthropic]>=0.80.0
+crewai-tools>=0.14.0
+mcp>=1.0.0
+python-dotenv>=1.0.0
+click>=8.1.0
+playwright>=1.40.0
