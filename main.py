@@ -22,7 +22,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from agents.job_crew import run_resume_crew, run_email_crew, run_job_search_crew, run_apply_crew
-from utils.file_utils import read_jd, save_output
+from utils.file_utils import read_jd, save_output, build_output_path
+from utils.pdf_utils import html_string_to_pdf
 
 
 _WORK_TYPE_CHOICES = click.Choice(["remote", "on_site", "hybrid", "any"], case_sensitive=False)
@@ -42,19 +43,22 @@ def cli():
 @click.option("--jd-text", default=None, help="Job description as a string (use quotes).")
 @click.option("--company", default="", help="Company name — used in the output filename.")
 def resume(jd_path, jd_text, company):
-    """Tailor your resume to a job description and save as HTML."""
+    """Tailor your resume to a job description and save as PDF."""
     jd = _resolve_jd(jd_path, jd_text)
 
     click.echo("\n🤖 Resume Tailoring Crew running...")
     click.echo(f"   JD length: {len(jd)} chars")
 
     html = run_resume_crew(jd, company=company)
-    output_path = save_output(html, prefix="resume", company=company, ext="html")
+    pdf_path = build_output_path("resume", company, "pdf")
+    result = html_string_to_pdf(html, pdf_path)
 
-    click.echo(f"\n✅ Done! Resume saved to:\n   {output_path}")
-    click.echo("\n📄 To convert to PDF:")
-    click.echo("   1. Open the file in Chrome")
-    click.echo("   2. Ctrl+P → Save as PDF → Margins: None")
+    if result:
+        click.echo(f"\n✅ Done! Resume saved as PDF:\n   {result}")
+    else:
+        output_path = save_output(html, prefix="resume", company=company, ext="html")
+        click.echo(f"\n✅ Done! Resume saved as HTML:\n   {output_path}")
+        click.echo("   Install playwright for auto-PDF: pip install playwright && playwright install chromium")
 
 
 # ── email ─────────────────────────────────────────────────────────────────────

@@ -10,10 +10,10 @@ Built with [CrewAI](https://github.com/joaomdmoura/crewAI) for agent orchestrati
 
 | Command | What happens |
 |---|---|
-| `resume` | Tailors your HTML resume to a specific job description and saves it ready to print as PDF |
+| `resume` | Tailors your resume to a specific job description and saves it as a PDF |
 | `email` | Writes a personalised cold outreach email for a role |
-| `search` | Searches LinkedIn for matching jobs posted in the last 24 hours and shows a ranked shortlist |
-| `apply` | Runs the full pipeline: search → match → generate one resume per job → HTML dashboard table |
+| `search` | Searches LinkedIn for matching jobs and shows a ranked shortlist |
+| `apply` | Runs the full pipeline: search → match → generate one PDF resume per job → HTML dashboard table |
 
 ---
 
@@ -43,7 +43,8 @@ job-agent/
 ## Requirements
 
 - **Python 3.10 – 3.13** (crewai does not support Python 3.14+)
-- `uv` recommended for managing Python versions on Windows
+- **`uv`** — required for managing Python versions and running the LinkedIn MCP server
+- **Playwright + Chromium** — required for PDF generation (`resume` and `apply` commands)
 
 ## Setup
 
@@ -66,7 +67,19 @@ uv venv --python 3.12 .venv
 pip install -r requirements.txt
 ```
 
-### 2 — Add your Anthropic API key
+> **Note:** `crewai[anthropic]` (the `[anthropic]` extra) is required — it installs the native Anthropic provider that CrewAI uses to call Claude. Plain `crewai` without the extra will fail at runtime.
+
+### 3 — Install Playwright's Chromium browser
+
+PDF generation uses a headless Chromium browser. Run this once after `pip install`:
+
+```bash
+playwright install chromium
+```
+
+Without this step `resume` falls back to saving HTML and `apply` dashboard links will be HTML-only.
+
+### 4 — Add your Anthropic API key
 
 ```bash
 cp .env.example .env
@@ -74,14 +87,11 @@ cp .env.example .env
 # ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-### 3 — (For `search` and `apply` only) Authenticate the LinkedIn MCP server
+### 5 — (For `search` and `apply` only) Authenticate the LinkedIn MCP server
 
 The LinkedIn search feature uses [linkedin-mcp-server](https://github.com/stickerdaniel/linkedin-mcp-server), which controls a real browser session. You need `uv` installed and a one-time login:
 
 ```bash
-# Install uv (if not already)
-pip install uv
-
 # Open a browser and log in to LinkedIn
 uvx mcp-server-linkedin --login
 ```
@@ -89,17 +99,6 @@ uvx mcp-server-linkedin --login
 Credentials are stored at `~/.linkedin-mcp/profile/` and reused on subsequent runs.
 
 > **Account risk:** LinkedIn's Terms of Service prohibit automated access. Use on your own account at your own risk.
-
-### 4 — (For auto PDF generation only) Install Playwright
-
-If you want `apply` to produce ready-to-use PDFs instead of HTML files:
-
-```bash
-pip install playwright
-playwright install chromium
-```
-
-Without this step the pipeline still works — resumes are generated as HTML and the dashboard links to them.
 
 ---
 
@@ -112,7 +111,7 @@ python main.py resume --jd path/to/jd.txt --company Stripe
 python main.py resume --jd-text "We are looking for a Senior Backend Engineer..." --company Stripe
 ```
 
-Outputs `output/resume_stripe_YYYYMMDD.html`. Open in Chrome → Ctrl+P → Save as PDF → Margins: None.
+Outputs `output/resume_stripe_YYYYMMDD.pdf` — a ready-to-send PDF generated via headless Chromium. If Playwright is not installed, falls back to saving an HTML file instead.
 
 ---
 
@@ -161,11 +160,10 @@ python main.py apply \
 
 Same options as `search`. What it does end-to-end:
 
-1. **Search** — queries LinkedIn with three keyword variations (past 24 h, mid-senior, filtered by work type)
+1. **Search** — queries LinkedIn with three keyword variations (mid-senior, filtered by work type and date)
 2. **Match** — fetches full JDs for the top 8 candidates, scores each against your Node.js / TypeScript / AWS / Kafka / Kubernetes stack
-3. **Resumes** — generates a tailored, one-page HTML resume for every strong/moderate match
-4. **PDF** — converts each resume to PDF automatically if Playwright is installed
-5. **Dashboard** — writes `output/applications_<timestamp>.html`
+3. **Resumes** — generates a tailored, one-page PDF resume for every strong/moderate match (HTML fallback if Playwright is missing)
+4. **Dashboard** — writes `output/applications_<timestamp>.html`
 
 #### Dashboard table
 
