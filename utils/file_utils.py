@@ -25,12 +25,16 @@ def slugify(text: str) -> str:
     return text[:40]
 
 
+def build_output_path(prefix: str, company: str = "", ext: str = "html") -> Path:
+    """Return the output path for a generated file without writing it."""
+    date = datetime.now().strftime("%Y%m%d")
+    slug = f"_{slugify(company)}" if company else ""
+    return OUTPUT_DIR / f"{prefix}{slug}_{date}.{ext}"
+
+
 def save_output(content: str, prefix: str, company: str = "", ext: str = "html") -> Path:
     """Save generated content to the output directory."""
-    date = datetime.now().strftime("%Y%m%d")
-    company_slug = f"_{slugify(company)}" if company else ""
-    filename = f"{prefix}{company_slug}_{date}.{ext}"
-    path = OUTPUT_DIR / filename
+    path = build_output_path(prefix, company, ext)
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
     return path

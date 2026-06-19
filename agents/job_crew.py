@@ -132,8 +132,8 @@ def run_apply_crew(
         }
     """
     from crewai_tools import MCPServerAdapter
-    from utils.file_utils import save_output
-    from utils.pdf_utils import html_to_pdf
+    from utils.file_utils import save_output, build_output_path
+    from utils.pdf_utils import html_string_to_pdf
     from utils.dashboard import generate_dashboard
 
     # ── Phase 1: search + structured match ────────────────────────────────────
@@ -177,9 +177,13 @@ def run_apply_crew(
     resume_paths: dict = {}
     for job in matched_jobs:
         html_str = run_resume_crew(jd=job.jd_text, company=job.company)
-        html_path = Path(save_output(html_str, prefix="resume", company=job.company, ext="html"))
-        pdf_path = html_to_pdf(html_path)
-        resume_paths[job.job_id] = {"html": html_path, "pdf": pdf_path}
+        pdf_out = build_output_path("resume", job.company, "pdf")
+        pdf_path = html_string_to_pdf(html_str, pdf_out)
+        if pdf_path:
+            resume_paths[job.job_id] = {"html": None, "pdf": pdf_path}
+        else:
+            html_path = Path(save_output(html_str, prefix="resume", company=job.company, ext="html"))
+            resume_paths[job.job_id] = {"html": html_path, "pdf": None}
 
     # ── Phase 3: generate dashboard ───────────────────────────────────────────
     dashboard_path = generate_dashboard(

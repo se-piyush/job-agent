@@ -32,10 +32,10 @@ _RESUME_HTML_TEMPLATE = """\
         .date { font-size: 8.5pt; color: #555; white-space: nowrap; }
         .role { font-weight: 600; font-size: 8.8pt; color: #333; font-style: italic; margin-bottom: 1px; }
         .exp-desc { list-style: disc; padding-left: 15px; }
-        .exp-desc li { margin-bottom: 1px; text-align: justify; text-align-last: left; }
-        .skills-line { font-size: 8.5pt; margin-bottom: 2px; }
+        .exp-desc li { margin-bottom: 1px; text-align: left; }
+        .skills-line { font-size: 8.5pt; margin-bottom: 2px; white-space: nowrap; overflow: hidden; }
         .skill-cat { font-weight: 700; color: #1a365d; }
-        .summary { text-align: justify; text-align-last: left; }
+        .summary { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
         strong { color: #1a365d; }
         .sub-header { display: flex; justify-content: space-between; align-items: baseline; margin-top: 3px; }
         .sub-company { font-weight: 700; font-size: 9pt; color: #2c5282; }
@@ -70,7 +70,7 @@ _RESUME_HTML_TEMPLATE = """\
         <div class="exp-item">
             <div class="exp-header"><span class="company">Abillion</span><span class="date">Jul 2025 - Nov 2025</span></div>
             <div class="role">Senior Software Engineer</div>
-            <ul class="exp-desc"><!-- 3 TAILORED BULLETS --></ul>
+            <ul class="exp-desc"><!-- 2 TAILORED BULLETS --></ul>
         </div>
 
         <!-- Teamified with sub-clients -->
@@ -89,14 +89,14 @@ _RESUME_HTML_TEMPLATE = """\
         <div class="exp-item">
             <div class="exp-header"><span class="company">Lifebit</span><span class="date">Jun 2022 - Jan 2024</span></div>
             <div class="role">Senior Software Engineer (Contract)</div>
-            <ul class="exp-desc"><!-- 2-3 TAILORED BULLETS --></ul>
+            <ul class="exp-desc"><!-- 3 TAILORED BULLETS --></ul>
         </div>
 
         <!-- OnceHub -->
         <div class="exp-item">
             <div class="exp-header"><span class="company">OnceHub</span><span class="date">Jan 2017 - Jun 2022</span></div>
             <div class="role">Senior Software Engineer (2021-2022) | SDE (2017-2021)</div>
-            <ul class="exp-desc"><!-- 3-4 TAILORED BULLETS --></ul>
+            <ul class="exp-desc"><!-- 2-3 TAILORED BULLETS --></ul>
         </div>
     </div>
 
@@ -130,19 +130,25 @@ def build_resume_agent() -> Agent:
         "You work exclusively on tailoring Piyush Sharma's resume to job descriptions.\n\n"
         "## STRICT RULES\n\n"
         "### Content rules\n"
-        "1. Tailor the Professional Summary to mirror the JD's language and priorities — stay truthful.\n"
+        "1. Tailor the Professional Summary to mirror the JD's language and priorities — stay truthful. "
+        "Keep it to 3–4 sentences, approximately 55–75 words. It must not exceed 6 rendered lines in the PDF.\n"
         "2. Technical Skills — ONLY include categories and items that are directly relevant to the JD. "
         "Drop entire categories with no overlap (e.g. omit Messaging if Kafka is not relevant). "
-        "Aim for 4–6 skill lines total; a leaner section frees vertical space for more bullets.\n"
+        "Aim for 4–6 skill lines total; a leaner section frees vertical space for more bullets. "
+        "Each skill line must fit on a single printed line — limit to 5–6 items per category. "
+        "If a category has more relevant items than fit, include only the most JD-relevant ones.\n"
         "3. Page filling — the rendered PDF must fill a full A4 page without overflowing to a second page. "
         "Calibrate bullet counts per role to achieve this:\n"
-        "   - Abillion: 2–3 bullets\n"
+        "   - Abillion: 2 bullets\n"
         "   - ForteGlobal: 3 bullets\n"
         "   - Gomist: 3 bullets\n"
-        "   - Lifebit: 2–3 bullets\n"
-        "   - OnceHub: 2-3 bullets (5-year tenure)\n"
+        "   - Lifebit: 3 bullets\n"
+        "   - OnceHub: 2–3 bullets\n"
         "   If the skills section is short (few lines), use the upper end of the bullet range to fill the page. "
         "Every bullet must be truthful and drawn from the experience bank — no filler.\n"
+        "   For Lifebit and OnceHub specifically: pick ONLY the bullets most directly relevant to the JD's "
+        "required stack and responsibilities — do not default to the most impressive-sounding bullets, "
+        "default to the most relevant ones.\n"
         "4. Bullets must feel natural — outcome/metric first or woven in. Never write 'as measured by'.\n"
         "5. Bold with <strong> keywords and tech terms that match the JD.\n"
         "6. Job role line = title only. No platform descriptors.\n"
