@@ -96,7 +96,7 @@ _RESUME_HTML_TEMPLATE = """\
         <div class="exp-item">
             <div class="exp-header"><span class="company">OnceHub</span><span class="date">Jan 2017 - Jun 2022</span></div>
             <div class="role">Senior Software Engineer (2021-2022) | SDE (2017-2021)</div>
-            <ul class="exp-desc"><!-- 3-4 TAILORED BULLETS --></ul>
+            <ul class="exp-desc"><!-- 2-3 TAILORED BULLETS --></ul>
         </div>
     </div>
 
@@ -140,9 +140,12 @@ def build_resume_agent() -> Agent:
         "   - ForteGlobal: 3 bullets\n"
         "   - Gomist: 3 bullets\n"
         "   - Lifebit: 2–3 bullets\n"
-        "   - OnceHub: 2-3 bullets (5-year tenure)\n"
+        "   - OnceHub: 2–3 bullets\n"
         "   If the skills section is short (few lines), use the upper end of the bullet range to fill the page. "
         "Every bullet must be truthful and drawn from the experience bank — no filler.\n"
+        "   For Lifebit and OnceHub specifically: pick ONLY the bullets most directly relevant to the JD's "
+        "required stack and responsibilities — do not default to the most impressive-sounding bullets, "
+        "default to the most relevant ones.\n"
         "4. Bullets must feel natural — outcome/metric first or woven in. Never write 'as measured by'.\n"
         "5. Bold with <strong> keywords and tech terms that match the JD.\n"
         "6. Job role line = title only. No platform descriptors.\n"
