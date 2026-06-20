@@ -2,7 +2,7 @@
 
 An AI-powered job application pipeline for Piyush Sharma. Searches LinkedIn for matching roles, tailors resumes to each job description, generates cold outreach emails, and produces a single-click application dashboard — all from the CLI.
 
-Built with [CrewAI](https://github.com/joaomdmoura/crewAI) for agent orchestration and [Claude](https://www.anthropic.com/claude) (claude-sonnet-4-6) as the LLM backbone.
+Built with [CrewAI](https://github.com/joaomdmoura/crewAI) for agent orchestration. Uses a **tiered LLM strategy** — Claude Haiku for the resume agent (precise HTML output), Groq free tier for everything else — keeping the cost per full pipeline run under $0.02.
 
 ---
 
@@ -22,20 +22,20 @@ Built with [CrewAI](https://github.com/joaomdmoura/crewAI) for agent orchestrati
 ```
 job-agent/
 ├── agents/
-│   ├── crew_agents.py     # CrewAI Agent definitions (resume, email, job search, job match)
+│   ├── crew_agents.py     # Agent definitions + per-agent LLM routing
 │   ├── crew_tasks.py      # CrewAI Task definitions with input placeholders
 │   └── job_crew.py        # Crew factory functions called by main.py
 ├── utils/
 │   ├── file_utils.py      # File I/O helpers (read JD, save output, slugify)
 │   ├── dashboard.py       # Generates the HTML application tracker table
-│   └── pdf_utils.py       # Optional HTML → PDF conversion via Playwright
+│   └── pdf_utils.py       # HTML → PDF conversion via Playwright
 ├── output/                # All generated files land here
 ├── models.py              # Pydantic models for structured CrewAI task output
 ├── profile.py             # Master experience bank — update this when your CV changes
 ├── main.py                # Click CLI entrypoint
 ├── requirements.txt
 ├── .env.example
-└── .env                   # ANTHROPIC_API_KEY (never commit)
+└── .env                   # API keys (never commit)
 ```
 
 ---
@@ -46,6 +46,8 @@ job-agent/
 - **`uv`** — required for managing Python versions and running the LinkedIn MCP server
 - **Playwright + Chromium** — required for PDF generation (`resume` and `apply` commands)
 
+---
+
 ## Setup
 
 ### 1 — Create a Python 3.12 virtual environment
@@ -53,12 +55,12 @@ job-agent/
 > Skip this if you already have a Python 3.10–3.13 venv active.
 
 ```bash
-# Download Python 3.12 and create a local venv (uv handles both)
 uv python install 3.12
 uv venv --python 3.12 .venv
 
-# Activate (run this every time you open a new terminal)
-.venv\Scripts\activate
+# Activate (run every time you open a new terminal)
+.venv\Scripts\activate        # Windows
+source .venv/bin/activate     # macOS / Linux
 ```
 
 ### 2 — Install dependencies
@@ -67,11 +69,11 @@ uv venv --python 3.12 .venv
 pip install -r requirements.txt
 ```
 
-> **Note:** `crewai[anthropic]` (the `[anthropic]` extra) is required — it installs the native Anthropic provider that CrewAI uses to call Claude. Plain `crewai` without the extra will fail at runtime.
+> **Note:** `crewai[anthropic]` (the `[anthropic]` extra) is required — it installs the native Anthropic provider used by the resume agent. Plain `crewai` without the extra will fail at runtime.
 
 ### 3 — Install Playwright's Chromium browser
 
-PDF generation uses a headless Chromium browser. Run this once after `pip install`:
+PDF generation uses headless Chromium. Run this once after `pip install`:
 
 ```bash
 playwright install chromium
@@ -79,20 +81,30 @@ playwright install chromium
 
 Without this step `resume` falls back to saving HTML and `apply` dashboard links will be HTML-only.
 
-### 4 — Add your Anthropic API key
+### 4 — Configure API keys
 
 ```bash
 cp .env.example .env
-# Edit .env and set:
-# ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+Edit `.env` and fill in the keys for the providers you plan to use:
+
+```env
+# Required for the resume agent (default: Haiku)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Required for search / match / email agents (default: Groq free tier)
+# Sign up free at https://console.groq.com
+GROQ_API_KEY=gsk_...
+```
+
+Both keys are needed for a default out-of-the-box run. If you override all agents to a single provider (see [LLM configuration](#llm-configuration)), you only need that provider's key.
 
 ### 5 — (For `search` and `apply` only) Authenticate the LinkedIn MCP server
 
 The LinkedIn search feature uses [linkedin-mcp-server](https://github.com/stickerdaniel/linkedin-mcp-server), which controls a real browser session. You need `uv` installed and a one-time login:
 
 ```bash
-# Open a browser and log in to LinkedIn
 uvx mcp-server-linkedin --login
 ```
 
@@ -111,7 +123,7 @@ python main.py resume --jd path/to/jd.txt --company Stripe
 python main.py resume --jd-text "We are looking for a Senior Backend Engineer..." --company Stripe
 ```
 
-Outputs `output/resume_stripe_YYYYMMDD.pdf` — a ready-to-send PDF generated via headless Chromium. If Playwright is not installed, falls back to saving an HTML file instead.
+Outputs `output/resume_stripe_YYYYMMDD.pdf` — a ready-to-send PDF generated via headless Chromium. Falls back to HTML if Playwright is not installed.
 
 ---
 
@@ -144,7 +156,7 @@ python main.py search \
 | `--date-posted` | `past_24_hours` | `past_hour` · `past_24_hours` · `past_week` · `past_month` |
 | `--max-pages` | `2` | Pages to scan per keyword query (1–10) |
 
-Runs three keyword variations to maximise coverage, deduplicates results, fetches full job details for the top candidates, and ranks them against your profile. Outputs a formatted shortlist to the terminal and saves it to `output/jobs_YYYYMMDD.txt`.
+Runs three keyword variations to maximise coverage, deduplicates results, fetches full job details for the top candidates, and ranks them against your profile. Saves to `output/jobs_YYYYMMDD.txt`.
 
 ---
 
@@ -158,22 +170,102 @@ python main.py apply \
   --max-pages 2
 ```
 
-Same options as `search`. What it does end-to-end:
+Same options as `search`. End-to-end:
 
 1. **Search** — queries LinkedIn with three keyword variations (mid-senior, filtered by work type and date)
-2. **Match** — fetches full JDs for the top 8 candidates, scores each against your Node.js / TypeScript / AWS / Kafka / Kubernetes stack
-3. **Resumes** — generates a tailored, one-page PDF resume for every strong/moderate match (HTML fallback if Playwright is missing)
+2. **Match** — fetches full JDs for the top candidates, scores each against your stack
+3. **Resumes** — generates a tailored one-page PDF resume per strong/moderate match
 4. **Dashboard** — writes `output/applications_<timestamp>.html`
 
-#### Dashboard table
+Open the dashboard in any browser. Each row is one matched job with a direct link to its tailored resume and the LinkedIn application page.
 
-Open the dashboard HTML in any browser. Each row is one matched job:
+---
 
-| # | Company | Title / Location | Match | Stack overlap | Why it fits | Actions |
-|---|---|---|---|---|---|---|
-| 1 | Stripe | Senior Backend Engineer / Remote | 🟢 Strong | Node.js, TypeScript, Kafka | Event-driven architecture... | 📄 PDF · 🔗 Apply |
+## LLM configuration
 
-"Apply" links directly to the LinkedIn job posting. "PDF" / "HTML" links open the tailored resume.
+Each agent uses its own default model tuned for cost vs. quality. You can override any tier without touching code.
+
+### Default tier assignment
+
+| Agent | Default model | Rationale | Est. cost/run |
+|---|---|---|---|
+| Resume | `anthropic/claude-haiku-4-5-20251001` | Strict HTML with 10+ rules — needs reliable instruction following | ~$0.014 |
+| Job Search | `groq/llama-3.3-70b-versatile` | Tool calling + list output — 70B handles it, free API | $0.00 |
+| Job Match | `groq/llama-3.3-70b-versatile` | Structured JSON evaluation — 70B handles it, free API | $0.00 |
+| Email | `groq/llama-3.3-70b-versatile` | Free-form creative writing — no strict constraints | $0.00 |
+
+**Total per full `apply` run: ~$0.014** (one resume per matched job).
+
+### Override priority
+
+```
+CLI --model flag  →  per-agent env var  →  LLM_MODEL env var  →  agent default
+```
+
+### Per-agent env vars (`.env`)
+
+Override individual agents without changing anything else:
+
+```env
+RESUME_MODEL=anthropic/claude-haiku-4-5-20251001   # or claude-sonnet-4-6 for best quality
+SEARCH_MODEL=groq/llama-3.3-70b-versatile
+MATCH_MODEL=groq/llama-3.3-70b-versatile
+EMAIL_MODEL=groq/llama-3.3-70b-versatile
+```
+
+### Force all agents to one model (CLI)
+
+```bash
+# Use Claude Sonnet for everything (highest quality, higher cost)
+python main.py --model anthropic/claude-sonnet-4-6 resume --jd jd.txt
+
+# Use a local Ollama model for everything (free, needs GPU)
+python main.py --model ollama/qwen2.5:14b resume --jd jd.txt
+```
+
+### Supported providers
+
+| Provider prefix | API key env var | Notes |
+|---|---|---|
+| `anthropic/` | `ANTHROPIC_API_KEY` | Claude models |
+| `groq/` | `GROQ_API_KEY` | Free tier at [console.groq.com](https://console.groq.com); 128k context |
+| `ollama/` | — | Local models via [Ollama](https://ollama.com); set `OLLAMA_BASE_URL` if not localhost |
+| `together_ai/` | `TOGETHER_API_KEY` | Hosted open-source models |
+| `fireworks_ai/` | `FIREWORKS_API_KEY` | Fast hosted inference |
+| `openrouter/` | `OPENROUTER_API_KEY` | Multi-provider router |
+
+#### Ollama model names
+
+Valid Ollama model strings (note the colon, not a dot):
+
+```
+ollama/qwen2.5:7b      # 8 GB VRAM — borderline for resume task
+ollama/qwen2.5:14b     # 16 GB VRAM — minimum recommended
+ollama/qwen2.5:32b     # 24 GB VRAM — reliable
+ollama/llama3.3:70b    # 48 GB VRAM — best open-source quality
+```
+
+Pull before use: `ollama pull qwen2.5:14b`
+
+Ollama's context window defaults to 4096 tokens, which is too small for the resume agent's backstory (~3,300 tokens + JD). The code automatically sets `num_ctx=16384` for all `ollama/` models.
+
+---
+
+## Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | If using `anthropic/` models | From [console.anthropic.com](https://console.anthropic.com) |
+| `GROQ_API_KEY` | If using `groq/` models | Free at [console.groq.com](https://console.groq.com) |
+| `RESUME_MODEL` | No | Override resume agent model (default: Haiku) |
+| `SEARCH_MODEL` | No | Override job search agent model (default: Groq) |
+| `MATCH_MODEL` | No | Override job match agent model (default: Groq) |
+| `EMAIL_MODEL` | No | Override email agent model (default: Groq) |
+| `LLM_MODEL` | No | Override ALL agents (overridden further by per-agent vars and `--model`) |
+| `OLLAMA_BASE_URL` | If using `ollama/` models remotely | Default: `http://localhost:11434` |
+| `TOGETHER_API_KEY` | If using `together_ai/` models | — |
+| `FIREWORKS_API_KEY` | If using `fireworks_ai/` models | — |
+| `OPENROUTER_API_KEY` | If using `openrouter/` models | — |
 
 ---
 
@@ -192,20 +284,12 @@ The resume and email agents read directly from `profile.py` at runtime — no ot
 
 ```
 main.py (Click CLI)
-    └─ job_crew.py          ← Crew factory functions
-           ├─ crew_agents.py  ← CrewAI Agent definitions (role / goal / backstory / LLM)
-           └─ crew_tasks.py   ← CrewAI Task definitions (description / expected_output)
+    └─ job_crew.py            ← Crew factory functions
+           ├─ crew_agents.py  ← Agent definitions + per-agent LLM routing
+           └─ crew_tasks.py   ← Task definitions (description / expected_output)
 
-LinkedIn search/apply commands also open an MCPServerAdapter context:
+LinkedIn search/apply also open an MCPServerAdapter context:
     MCPServerAdapter → uvx mcp-server-linkedin → search_jobs / get_job_details tools
 ```
 
-To add a new agent, create a builder function in `crew_agents.py`, a task factory in `crew_tasks.py`, a crew function in `job_crew.py`, and wire a new Click command in `main.py`.
-
----
-
-## Environment variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | Claude API key from [console.anthropic.com](https://console.anthropic.com) |
+To add a new agent: create a builder in `crew_agents.py`, a task factory in `crew_tasks.py`, a crew function in `job_crew.py`, and wire a Click command in `main.py`.

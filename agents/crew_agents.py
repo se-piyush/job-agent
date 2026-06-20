@@ -82,7 +82,7 @@ _RESUME_HTML_TEMPLATE = """\
             <ul class="exp-desc"><!-- 3 TAILORED BULLETS --></ul>
 
             <div class="sub-header"><span class="sub-company">Gomist</span><span class="date">Mar 2024 - Nov 2024</span></div>
-            <ul class="exp-desc"><!-- 2-3 TAILORED BULLETS --></ul>
+            <ul class="exp-desc"><!-- 3 TAILORED BULLETS --></ul>
         </div>
 
         <!-- Lifebit -->
@@ -112,28 +112,37 @@ _RESUME_HTML_TEMPLATE = """\
 </html>"""
 
 
-_DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
+# Per-agent defaults — tuned for cost vs. quality tradeoff.
+# Resume needs precise HTML output → Haiku. Everything else → Groq free tier.
+_RESUME_DEFAULT = "anthropic/claude-haiku-4-5-20251001"
+_AGENT_DEFAULT  = "groq/llama-3.3-70b-versatile"
 
 
-def _llm(model: str = None) -> LLM:
-    model = model or os.getenv("LLM_MODEL", _DEFAULT_MODEL)
+def _resolve_model(override: str | None, agent_env: str, agent_default: str) -> str:
+    # Priority: CLI --model flag → per-agent env var → global LLM_MODEL → agent default
+    return override or os.getenv(agent_env) or os.getenv("LLM_MODEL") or agent_default
+
+
+def _llm(model: str) -> LLM:
     kwargs: dict = {"model": model, "max_tokens": 4096}
-
     if model.startswith("anthropic/"):
         kwargs["api_key"] = os.getenv("ANTHROPIC_API_KEY")
     elif model.startswith("ollama/"):
         kwargs["base_url"] = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        kwargs["num_ctx"] = 16384
+    elif model.startswith("groq/"):
+        kwargs["api_key"] = os.getenv("GROQ_API_KEY")
     elif model.startswith("together_ai/"):
         kwargs["api_key"] = os.getenv("TOGETHER_API_KEY")
     elif model.startswith("fireworks_ai/"):
         kwargs["api_key"] = os.getenv("FIREWORKS_API_KEY")
     elif model.startswith("openrouter/"):
         kwargs["api_key"] = os.getenv("OPENROUTER_API_KEY")
-
     return LLM(**kwargs)
 
 
 def build_resume_agent(model: str = None) -> Agent:
+    effective = _resolve_model(model, "RESUME_MODEL", _RESUME_DEFAULT)
     profile_json = json.dumps(
         {"personal": PERSONAL, "education": EDUCATION, "experience": EXPERIENCE, "skills": SKILLS},
         indent=2,
@@ -191,7 +200,7 @@ def build_resume_agent(model: str = None) -> Agent:
             "no markdown fences, no preamble. Start with <!DOCTYPE html> and end with </html>."
         ),
         backstory=backstory,
-        llm=_llm(model),
+        llm=_llm(effective),
         verbose=False,
         allow_delegation=False,
     )
@@ -202,6 +211,7 @@ def build_job_search_agent(tools: list = None, model: str = None) -> Agent:
     Searches LinkedIn for senior backend engineering jobs posted in the last 24 hours.
     Requires linkedin MCP tools (search_jobs) injected at runtime.
     """
+    effective = _resolve_model(model, "SEARCH_MODEL", _AGENT_DEFAULT)
     return Agent(
         role="LinkedIn Job Scout",
         goal=(
@@ -226,7 +236,7 @@ def build_job_search_agent(tools: list = None, model: str = None) -> Agent:
             "- Return a clean numbered list: job ID | title | company | location"
         ),
         tools=tools or [],
-        llm=_llm(model),
+        llm=_llm(effective),
         verbose=True,
         allow_delegation=False,
     )
@@ -237,6 +247,7 @@ def build_job_match_agent(tools: list = None, model: str = None) -> Agent:
     Fetches full job details and scores each against Piyush's profile.
     Requires linkedin MCP tools (get_job_details) injected at runtime.
     """
+    effective = _resolve_model(model, "MATCH_MODEL", _AGENT_DEFAULT)
     profile_json = json.dumps(
         {"experience": EXPERIENCE, "skills": SKILLS},
         indent=2,
@@ -280,13 +291,14 @@ def build_job_match_agent(tools: list = None, model: str = None) -> Agent:
             "---"
         ),
         tools=tools or [],
-        llm=_llm(model),
+        llm=_llm(effective),
         verbose=True,
         allow_delegation=False,
     )
 
 
 def build_email_agent(model: str = None) -> Agent:
+    effective = _resolve_model(model, "EMAIL_MODEL", _AGENT_DEFAULT)
     backstory = (
         f"You write cold outreach emails for {PERSONAL['name']}, a Senior Backend Engineer with 8+ years of experience.\n\n"
         "## TONE\n"
@@ -314,7 +326,7 @@ def build_email_agent(model: str = None) -> Agent:
             "direct, and stays under 200 words."
         ),
         backstory=backstory,
-        llm=_llm(model),
+        llm=_llm(effective),
         verbose=False,
         allow_delegation=False,
     )
