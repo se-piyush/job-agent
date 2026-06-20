@@ -39,8 +39,8 @@ def _strip_fences(text: str) -> str:
 
 # ── Resume ─────────────────────────────────────────────────────────────────────
 
-def run_resume_crew(jd: str, company: str = "") -> str:
-    agent = build_resume_agent()
+def run_resume_crew(jd: str, company: str = "", model: str = None) -> str:
+    agent = build_resume_agent(model=model)
     task = resume_task(agent)
     crew = Crew(
         agents=[agent],
@@ -54,8 +54,8 @@ def run_resume_crew(jd: str, company: str = "") -> str:
 
 # ── Email ──────────────────────────────────────────────────────────────────────
 
-def run_email_crew(jd: str, company: str = "") -> str:
-    agent = build_email_agent()
+def run_email_crew(jd: str, company: str = "", model: str = None) -> str:
+    agent = build_email_agent(model=model)
     task = email_task(agent)
     crew = Crew(
         agents=[agent],
@@ -75,6 +75,7 @@ def run_job_search_crew(
     work_type: str = "remote",
     date_posted: str = "past_24_hours",
     max_pages: int = 2,
+    model: str = None,
 ) -> str:
     """
     Searches LinkedIn for matching jobs (past 24 hours) and returns a
@@ -87,8 +88,8 @@ def run_job_search_crew(
     with MCPServerAdapter(_MCP_PARAMS) as mcp:
         job_tools = [t for t in mcp if t.name in {"search_jobs", "get_job_details"}]
 
-        search_agent = build_job_search_agent(tools=job_tools)
-        match_agent = build_job_match_agent(tools=job_tools)
+        search_agent = build_job_search_agent(tools=job_tools, model=model)
+        match_agent = build_job_match_agent(tools=job_tools, model=model)
 
         s_task = job_search_task(search_agent)
         m_task = job_filter_task(match_agent, search_task=s_task)
@@ -119,6 +120,7 @@ def run_apply_crew(
     work_type: str = "remote",
     date_posted: str = "past_24_hours",
     max_pages: int = 2,
+    model: str = None,
 ) -> dict:
     """
     Full pipeline: LinkedIn search → profile match → tailored resume per job
@@ -140,8 +142,8 @@ def run_apply_crew(
     with MCPServerAdapter(_MCP_PARAMS) as mcp:
         job_tools = [t for t in mcp if t.name in {"search_jobs", "get_job_details"}]
 
-        search_agent = build_job_search_agent(tools=job_tools)
-        match_agent = build_job_match_agent(tools=job_tools)
+        search_agent = build_job_search_agent(tools=job_tools, model=model)
+        match_agent = build_job_match_agent(tools=job_tools, model=model)
 
         s_task = job_search_task(search_agent)
         m_task = job_filter_task_for_apply(match_agent, search_task=s_task)
@@ -176,7 +178,7 @@ def run_apply_crew(
 
     resume_paths: dict = {}
     for job in matched_jobs:
-        html_str = run_resume_crew(jd=job.jd_text, company=job.company)
+        html_str = run_resume_crew(jd=job.jd_text, company=job.company, model=model)
         pdf_out = build_output_path("resume", job.company, "pdf")
         pdf_path = html_string_to_pdf(html_str, pdf_out)
         if pdf_path:

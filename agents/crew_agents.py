@@ -112,15 +112,28 @@ _RESUME_HTML_TEMPLATE = """\
 </html>"""
 
 
-def _llm() -> LLM:
-    return LLM(
-        model="anthropic/claude-sonnet-4-6",
-        api_key=os.getenv("ANTHROPIC_API_KEY"),
-        max_tokens=4096,
-    )
+_DEFAULT_MODEL = "anthropic/claude-sonnet-4-6"
 
 
-def build_resume_agent() -> Agent:
+def _llm(model: str = None) -> LLM:
+    model = model or os.getenv("LLM_MODEL", _DEFAULT_MODEL)
+    kwargs: dict = {"model": model, "max_tokens": 4096}
+
+    if model.startswith("anthropic/"):
+        kwargs["api_key"] = os.getenv("ANTHROPIC_API_KEY")
+    elif model.startswith("ollama/"):
+        kwargs["base_url"] = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    elif model.startswith("together_ai/"):
+        kwargs["api_key"] = os.getenv("TOGETHER_API_KEY")
+    elif model.startswith("fireworks_ai/"):
+        kwargs["api_key"] = os.getenv("FIREWORKS_API_KEY")
+    elif model.startswith("openrouter/"):
+        kwargs["api_key"] = os.getenv("OPENROUTER_API_KEY")
+
+    return LLM(**kwargs)
+
+
+def build_resume_agent(model: str = None) -> Agent:
     profile_json = json.dumps(
         {"personal": PERSONAL, "education": EDUCATION, "experience": EXPERIENCE, "skills": SKILLS},
         indent=2,
@@ -178,13 +191,13 @@ def build_resume_agent() -> Agent:
             "no markdown fences, no preamble. Start with <!DOCTYPE html> and end with </html>."
         ),
         backstory=backstory,
-        llm=_llm(),
+        llm=_llm(model),
         verbose=False,
         allow_delegation=False,
     )
 
 
-def build_job_search_agent(tools: list = None) -> Agent:
+def build_job_search_agent(tools: list = None, model: str = None) -> Agent:
     """
     Searches LinkedIn for senior backend engineering jobs posted in the last 24 hours.
     Requires linkedin MCP tools (search_jobs) injected at runtime.
@@ -213,13 +226,13 @@ def build_job_search_agent(tools: list = None) -> Agent:
             "- Return a clean numbered list: job ID | title | company | location"
         ),
         tools=tools or [],
-        llm=_llm(),
+        llm=_llm(model),
         verbose=True,
         allow_delegation=False,
     )
 
 
-def build_job_match_agent(tools: list = None) -> Agent:
+def build_job_match_agent(tools: list = None, model: str = None) -> Agent:
     """
     Fetches full job details and scores each against Piyush's profile.
     Requires linkedin MCP tools (get_job_details) injected at runtime.
@@ -267,13 +280,13 @@ def build_job_match_agent(tools: list = None) -> Agent:
             "---"
         ),
         tools=tools or [],
-        llm=_llm(),
+        llm=_llm(model),
         verbose=True,
         allow_delegation=False,
     )
 
 
-def build_email_agent() -> Agent:
+def build_email_agent(model: str = None) -> Agent:
     backstory = (
         f"You write cold outreach emails for {PERSONAL['name']}, a Senior Backend Engineer with 8+ years of experience.\n\n"
         "## TONE\n"
@@ -301,7 +314,7 @@ def build_email_agent() -> Agent:
             "direct, and stays under 200 words."
         ),
         backstory=backstory,
-        llm=_llm(),
+        llm=_llm(model),
         verbose=False,
         allow_delegation=False,
     )

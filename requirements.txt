@@ -1,4 +1,6 @@
-# Core orchestration (anthropic extra required for native Claude provider)
+# Core orchestration
+# [anthropic] extra required when using Claude; swap for [ollama] / [together-ai] etc.
+# to install multiple extras: pip install "crewai[anthropic,ollama]"
 crewai[anthropic]>=0.80.0
 crewai-tools>=0.14.0
 

@@ -2,7 +2,7 @@
 main.py — CLI entrypoint for the job application agent system.
 
 Usage:
-    python main.py resume --jd jobs/stripe.txt [--company Stripe]
+    python main.py --model ollama/qwen2.5:72b resume --jd jobs/stripe.txt
     python main.py resume --jd-text "We are looking for..."
 
     python main.py email  --jd jobs/stripe.txt --company Stripe
@@ -31,9 +31,20 @@ _DATE_POSTED_CHOICES = click.Choice(["past_hour", "past_24_hours", "past_week", 
 
 
 @click.group()
-def cli():
+@click.option(
+    "--model", default=None, envvar="LLM_MODEL",
+    help=(
+        "LLM model string passed to LiteLLM. Defaults to LLM_MODEL env var, "
+        "then anthropic/claude-sonnet-4-6. "
+        "Examples: ollama/qwen2.5:72b  |  together_ai/Qwen/Qwen2.5-72B-Instruct  |  "
+        "anthropic/claude-sonnet-4-6"
+    ),
+)
+@click.pass_context
+def cli(ctx, model):
     """Job Agent — AI-powered resume and email tailoring via CrewAI."""
-    pass
+    ctx.ensure_object(dict)
+    ctx.obj["model"] = model
 
 
 # ── resume ────────────────────────────────────────────────────────────────────
@@ -42,14 +53,18 @@ def cli():
 @click.option("--jd", "jd_path", default=None, help="Path to a .txt file with the job description.")
 @click.option("--jd-text", default=None, help="Job description as a string (use quotes).")
 @click.option("--company", default="", help="Company name — used in the output filename.")
-def resume(jd_path, jd_text, company):
+@click.pass_context
+def resume(ctx, jd_path, jd_text, company):
     """Tailor your resume to a job description and save as PDF."""
     jd = _resolve_jd(jd_path, jd_text)
+    model = ctx.obj["model"]
 
     click.echo("\n🤖 Resume Tailoring Crew running...")
     click.echo(f"   JD length: {len(jd)} chars")
+    if model:
+        click.echo(f"   Model    : {model}")
 
-    html = run_resume_crew(jd, company=company)
+    html = run_resume_crew(jd, company=company, model=model)
     pdf_path = build_output_path("resume", company, "pdf")
     result = html_string_to_pdf(html, pdf_path)
 
@@ -67,13 +82,17 @@ def resume(jd_path, jd_text, company):
 @click.option("--jd", "jd_path", default=None, help="Path to a .txt file with the job description.")
 @click.option("--jd-text", default=None, help="Job description as a string.")
 @click.option("--company", default="", required=True, help="Company name for personalisation.")
-def email(jd_path, jd_text, company):
+@click.pass_context
+def email(ctx, jd_path, jd_text, company):
     """Write a tailored cold outreach email for a job application."""
     jd = _resolve_jd(jd_path, jd_text)
+    model = ctx.obj["model"]
 
     click.echo("\n🤖 Cold Email Crew running...")
+    if model:
+        click.echo(f"   Model: {model}")
 
-    result = run_email_crew(jd, company=company)
+    result = run_email_crew(jd, company=company, model=model)
     output_path = save_output(result, prefix="email", company=company, ext="txt")
 
     click.echo(f"\n✅ Done! Email saved to:\n   {output_path}")
@@ -95,7 +114,8 @@ def email(jd_path, jd_text, company):
               help="How recently jobs were posted. 'past_hour' is the tightest filter LinkedIn supports.")
 @click.option("--max-pages", default=2, type=click.IntRange(1, 10), show_default=True,
               help="LinkedIn result pages to scan per keyword query (1-10).")
-def search(keywords, location, work_type, date_posted, max_pages):
+@click.pass_context
+def search(ctx, keywords, location, work_type, date_posted, max_pages):
     """Search LinkedIn for matching jobs posted in the last 24 hours.
 
     Prerequisite — authenticate the LinkedIn MCP server once:
@@ -103,12 +123,17 @@ def search(keywords, location, work_type, date_posted, max_pages):
         uvx mcp-server-linkedin --login
     """
     kw = keywords or "Senior Backend Engineer Node.js TypeScript"
+    model = ctx.obj["model"]
+
     click.echo("\n🔍 Job Search Crew running...")
     click.echo(f"   Keywords   : {kw}")
     click.echo(f"   Location   : {location or 'worldwide'}")
     click.echo(f"   Work type  : {work_type}")
     click.echo(f"   Date posted: {date_posted.replace('_', ' ')}")
-    click.echo(f"   Max pages  : {max_pages} per query\n")
+    click.echo(f"   Max pages  : {max_pages} per query")
+    if model:
+        click.echo(f"   Model      : {model}")
+    click.echo()
 
     result = run_job_search_crew(
         keywords=kw,
@@ -116,6 +141,7 @@ def search(keywords, location, work_type, date_posted, max_pages):
         work_type=work_type,
         date_posted=date_posted,
         max_pages=max_pages,
+        model=model,
     )
 
     output_path = save_output(result, prefix="jobs", company="", ext="txt")
@@ -138,28 +164,32 @@ def search(keywords, location, work_type, date_posted, max_pages):
               help="How recently jobs were posted. 'past_hour' is the tightest filter LinkedIn supports.")
 @click.option("--max-pages", default=2, type=click.IntRange(1, 10), show_default=True,
               help="LinkedIn result pages to scan per keyword query (1-10).")
-def apply(keywords, location, work_type, date_posted, max_pages):
+@click.pass_context
+def apply(ctx, keywords, location, work_type, date_posted, max_pages):
     """Search LinkedIn, generate a tailored resume per match, and open a dashboard.
 
     Runs the full pipeline:
-      1. Search LinkedIn (past 24 h, mid-senior, filtered by work type)
+      1. Search LinkedIn (mid-senior, filtered by work type and date)
       2. Match jobs against Piyush's profile
-      3. Generate a tailored HTML resume for every matched job
-      4. Convert resumes to PDF if playwright is installed
-         (pip install playwright && playwright install chromium)
-      5. Open an HTML dashboard table — one row per job, linked to its resume
+      3. Generate a tailored PDF resume for every matched job
+      4. Open an HTML dashboard table — one row per job, linked to its resume
 
     Prerequisite — authenticate the LinkedIn MCP server once:
 
         uvx mcp-server-linkedin --login
     """
     kw = keywords or "Senior Backend Engineer Node.js TypeScript"
+    model = ctx.obj["model"]
+
     click.echo("\n🚀 Apply Crew running...")
     click.echo(f"   Keywords   : {kw}")
     click.echo(f"   Location   : {location or 'worldwide'}")
     click.echo(f"   Work type  : {work_type}")
     click.echo(f"   Date posted: {date_posted.replace('_', ' ')}")
-    click.echo(f"   Max pages  : {max_pages} per query\n")
+    click.echo(f"   Max pages  : {max_pages} per query")
+    if model:
+        click.echo(f"   Model      : {model}")
+    click.echo()
 
     result = run_apply_crew(
         keywords=kw,
@@ -167,6 +197,7 @@ def apply(keywords, location, work_type, date_posted, max_pages):
         work_type=work_type,
         date_posted=date_posted,
         max_pages=max_pages,
+        model=model,
     )
 
     if "error" in result:
@@ -180,7 +211,6 @@ def apply(keywords, location, work_type, date_posted, max_pages):
 
     click.echo(f"\n✅ {len(matched)} job(s) matched. Resumes generated.")
 
-    # Report resume files
     resume_paths = result.get("resume_paths", {})
     for job in matched:
         paths = resume_paths.get(job.job_id, {})
