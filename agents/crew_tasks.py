@@ -25,23 +25,30 @@ def resume_task(agent: Agent) -> Task:
 def job_search_task(agent: Agent) -> Task:
     return Task(
         description=(
-            "Search LinkedIn for senior backend engineering jobs posted in the last 24 hours.\n\n"
-            "Run the following three searches (call search_jobs separately for each). "
-            "For each call: if work_type is 'any', omit the work_type parameter entirely; "
-            "otherwise include work_type={work_type}.\n\n"
-            "1. keywords='{keywords}', location='{location}', date_posted={date_posted}, "
-            "sort_by=date, experience_level=mid_senior, max_pages={max_pages}\n"
-            "2. keywords='Senior Software Engineer TypeScript AWS', location='{location}', "
-            "date_posted={date_posted}, sort_by=date, experience_level=mid_senior, max_pages={max_pages}\n"
-            "3. keywords='Senior Node.js Developer', location='{location}', "
-            "date_posted={date_posted}, sort_by=date, experience_level=mid_senior, max_pages={max_pages}\n\n"
-            "Deduplicate job IDs across all searches.\n"
-            "Return a numbered list: job_id | title | company | location"
+            "Search LinkedIn for Node.js engineering jobs posted in the last 24 hours.\n\n"
+            "Make exactly 8 search_jobs calls. "
+            "Each call must contain ONLY the fields listed below — do not add any other fields "
+            "(no job_type, no extra nulls, no empty strings).\n\n"
+            "Calls 1-6 (NCR cities, no work_type field):\n"
+            "1. keywords='node.js' location='New Delhi, Delhi, India'     date_posted='past_24_hours' sort_by='date' experience_level='mid_senior' max_pages={max_pages} easy_apply=true \n"
+            "2. keywords='node.js' location='New Delhi, Delhi, India'     date_posted='past_24_hours' sort_by='date' experience_level='mid_senior' max_pages={max_pages} easy_apply=false \n"
+            "3. keywords='node.js' location='Noida, Uttar Pradesh, India' date_posted='past_24_hours' sort_by='date' experience_level='mid_senior' max_pages={max_pages} easy_apply=true \n"
+            "4. keywords='node.js' location='Noida, Uttar Pradesh, India' date_posted='past_24_hours' sort_by='date' experience_level='mid_senior' max_pages={max_pages} easy_apply=false \n"
+            "5. keywords='node.js' location='Gurugram, Haryana, India'    date_posted='past_24_hours' sort_by='date' experience_level='mid_senior' max_pages={max_pages} easy_apply=true \n"
+            "6. keywords='node.js' location='Gurugram, Haryana, India'    date_posted='past_24_hours' sort_by='date' experience_level='mid_senior' max_pages={max_pages} easy_apply=false \n\n"
+            "Calls 7-8 (India remote, must include work_type='remote', no location field):\n"
+            "7. keywords='node.js' work_type='remote' date_posted='past_24_hours' location='india' sort_by='date' experience_level='mid_senior' max_pages={max_pages} easy_apply=true \n"
+            "8. keywords='node.js' work_type='remote' date_posted='past_24_hours' location='india' sort_by='date' experience_level='mid_senior' max_pages={max_pages} easy_apply=false \n\n"
+            "After all 8 calls:\n"
+            "- Verify you have made exactly 8 search_jobs calls. If any are missing, make them before continuing.\n"
+            "- If the same company has both a backend and a fullstack opening, keep only the backend role.\n"
+            "- Deduplicate job IDs.\n"
+            "- Return a numbered list: job_id | title | company | location"
         ),
         expected_output=(
             "A numbered list of unique job IDs with title, company, and location.\n"
             "Example:\n1. 1234567890 | Senior Backend Engineer | Stripe | Remote\n"
-            "2. 9876543210 | Senior Node.js Developer | Razorpay | Bangalore"
+            "2. 9876543210 | Senior Node.js Developer | Razorpay | Delhi"
         ),
         agent=agent,
     )
@@ -52,8 +59,10 @@ def job_filter_task(agent: Agent, search_task: Task) -> Task:
     return Task(
         description=(
             "You have a list of LinkedIn job IDs from the search step.\n\n"
-            "1. Pick up to 10 jobs whose titles look most relevant for a "
-            "Senior Backend Engineer (Node.js / TypeScript / AWS background).\n"
+            "1. Pick up to 10 jobs whose titles match any of these target roles: "
+            "Senior Backend Engineer, Senior Software Engineer, Software Development Engineer III,  Senior Fullstack Engineer, "
+            "Tech Lead, Backend Lead, Senior Node.js Developer, Node.js Developer. "
+            "Prioritise backend and tech lead titles over fullstack when both appear.\n"
             "2. Call get_job_details for each selected job ID to fetch the full job description.\n"
             "3. Evaluate each full JD against Piyush's profile and the match criteria in your backstory.\n"
             "4. Return only the jobs that are STRONG or MODERATE matches, ranked best-first.\n\n"
@@ -82,8 +91,10 @@ def job_filter_task_for_apply(agent: Agent, search_task: Task) -> Task:
     return Task(
         description=(
             "You have a list of LinkedIn job IDs from the search step.\n\n"
-            "1. Pick up to 8 job IDs whose titles look most relevant for a "
-            "Senior Backend Engineer (Node.js / TypeScript / AWS background).\n"
+            "1. Pick up to 8 job IDs whose titles match any of these target roles: "
+            "Senior Backend Engineer, Senior Software Engineer, Senior Fullstack Engineer, "
+            "Tech Lead, Backend Lead, Senior Node.js Developer, Node.js Developer. "
+            "Prioritise backend and tech lead titles over fullstack when both appear.\n"
             "2. Call get_job_details for each selected job ID.\n"
             "3. Evaluate each full JD against Piyush's profile and the match criteria in your backstory.\n"
             "4. For every STRONG or MODERATE match, produce a structured record including:\n"

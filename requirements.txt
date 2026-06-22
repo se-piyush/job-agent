@@ -1,7 +1,11 @@
 # Core orchestration
-# [anthropic] extra required when using Claude; swap for [ollama] / [together-ai] etc.
-# to install multiple extras: pip install "crewai[anthropic,ollama]"
+# [anthropic] extra required for the native Claude provider used by the resume agent.
+# litellm is installed separately (not via crewai extra) to avoid version conflicts
+# with crewai-tools which pins crewai to an exact version.
 crewai[anthropic]>=0.80.0
+# LiteLLM enables Groq, Together AI, Fireworks, OpenRouter and all other
+# non-native providers (anything not in crewai's built-in list).
+litellm>=1.0.0
 crewai-tools>=0.14.0
 
 # MCP (linkedin-mcp-server transport)

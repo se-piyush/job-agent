@@ -113,9 +113,14 @@ _RESUME_HTML_TEMPLATE = """\
 
 
 # Per-agent defaults — tuned for cost vs. quality tradeoff.
-# Resume needs precise HTML output → Haiku. Everything else → Groq free tier.
-_RESUME_DEFAULT = "anthropic/claude-haiku-4-5-20251001"
-_AGENT_DEFAULT  = "groq/llama-3.3-70b-versatile"
+# Resume/Search/Match → Haiku: all three accumulate large contexts (HTML template,
+# profile JSON, multi-turn tool calls). Groq's free tier caps at 12k TPM which a
+# single tool-calling run can exceed. Haiku handles these reliably for ~$0.01-0.02.
+# Email → Groq free: short output, no tool calls, fits comfortably within free limits.
+_RESUME_DEFAULT  = "anthropic/claude-haiku-4-5-20251001"
+_SEARCH_DEFAULT  = "anthropic/claude-haiku-4-5-20251001"
+_MATCH_DEFAULT   = "anthropic/claude-haiku-4-5-20251001"
+_EMAIL_DEFAULT   = "groq/llama-3.3-70b-versatile"
 
 
 def _resolve_model(override: str | None, agent_env: str, agent_default: str) -> str:
@@ -125,20 +130,46 @@ def _resolve_model(override: str | None, agent_env: str, agent_default: str) -> 
 
 def _llm(model: str) -> LLM:
     kwargs: dict = {"model": model, "max_tokens": 4096}
-    if model.startswith("anthropic/"):
+    is_anthropic = model.startswith("anthropic/")
+
+    if is_anthropic:
         kwargs["api_key"] = os.getenv("ANTHROPIC_API_KEY")
+    elif model.startswith("groq/"):
+        # Route through openai/ prefix so CrewAI uses its native OpenAI provider
+        # (Groq's API is OpenAI-compatible).
+        kwargs["model"] = "openai/" + model[len("groq/"):]
+        kwargs["api_key"] = os.getenv("GROQ_API_KEY")
+        kwargs["base_url"] = "https://api.groq.com/openai/v1"
     elif model.startswith("ollama/"):
         kwargs["base_url"] = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-        kwargs["num_ctx"] = 16384
-    elif model.startswith("groq/"):
-        kwargs["api_key"] = os.getenv("GROQ_API_KEY")
+        # num_ctx cannot be passed via the OpenAI-compatible path CrewAI uses for Ollama.
+        # Set it in your Modelfile instead: FROM qwen2.5:7b / PARAMETER num_ctx 16384
     elif model.startswith("together_ai/"):
         kwargs["api_key"] = os.getenv("TOGETHER_API_KEY")
     elif model.startswith("fireworks_ai/"):
         kwargs["api_key"] = os.getenv("FIREWORKS_API_KEY")
     elif model.startswith("openrouter/"):
         kwargs["api_key"] = os.getenv("OPENROUTER_API_KEY")
-    return LLM(**kwargs)
+
+    llm = LLM(**kwargs)
+
+    if not is_anthropic and hasattr(llm, '_format_messages_for_provider'):
+        # CrewAI's _format_messages_for_provider only strips cache_breakpoint for
+        # Anthropic. Every other provider receives the raw marker and rejects it.
+        # Patch this instance to strip it after the base method runs.
+        # Guard with hasattr: some provider classes (e.g. OpenAICompatibleCompletion
+        # used by ollama/) don't have this method and don't need the patch.
+        from crewai.llms.cache import strip_cache_breakpoint as _strip
+        _orig = llm._format_messages_for_provider
+        def _fmt(messages, _o=_orig):
+            result = _o(messages)
+            for msg in result:
+                if isinstance(msg, dict):
+                    _strip(msg)
+            return result
+        llm._format_messages_for_provider = _fmt
+
+    return llm
 
 
 def build_resume_agent(model: str = None) -> Agent:
@@ -211,13 +242,14 @@ def build_job_search_agent(tools: list = None, model: str = None) -> Agent:
     Searches LinkedIn for senior backend engineering jobs posted in the last 24 hours.
     Requires linkedin MCP tools (search_jobs) injected at runtime.
     """
-    effective = _resolve_model(model, "SEARCH_MODEL", _AGENT_DEFAULT)
+    effective = _resolve_model(model, "SEARCH_MODEL", _SEARCH_DEFAULT)
     return Agent(
         role="LinkedIn Job Scout",
         goal=(
-            "Search LinkedIn for senior backend engineering jobs posted in the last 24 hours "
-            "that match Piyush Sharma's Node.js / TypeScript / AWS stack. Return a structured "
-            "list of job IDs, titles, companies, and locations from the search results."
+            "Search LinkedIn for Node.js engineering jobs posted in the last 24 hours "
+            "that match Piyush Sharma's senior backend stack. "
+            "Cover two location strategies: Delhi NCR with any work type (remote, hybrid, on-site all fine), "
+            "and remote-only globally. Return a deduplicated list of job IDs, titles, companies, and locations."
         ),
         backstory=(
             "You are a specialist at finding relevant engineering job postings on LinkedIn. "
@@ -225,20 +257,26 @@ def build_job_search_agent(tools: list = None, model: str = None) -> Agent:
             "His core stack: Node.js, TypeScript, GraphQL, REST APIs, PostgreSQL, MongoDB, "
             "DynamoDB, Apache Kafka, AWS (Lambda, RDS, S3, Cognito, CloudFront), "
             "Kubernetes, Docker, GitHub Actions, Terraform, OAuth 2.0, JWT, RBAC.\n\n"
+            "Work location preference:\n"
+            "- Delhi, Noida, Gurgaon (Delhi NCR): on-site, hybrid, and remote are all acceptable\n"
+            "- Rest of India: remote only\n\n"
             "When searching:\n"
-            "- Always use date_posted=past_24_hours\n"
-            "- Always use sort_by=date\n"
-            "- Use experience_level=mid_senior\n"
-            "- Run 2-3 searches with different keyword combinations to maximise coverage:\n"
-            "  e.g. 'Senior Backend Engineer Node.js', 'Senior Software Engineer TypeScript AWS', "
-            "'Senior Node.js Developer'\n"
-            "- Collect all unique job IDs across searches\n"
+            "- Use keyword='node.js' with experience_level=mid_senior — LinkedIn surfaces all relevant Node.js roles\n"
+            "- Always use date_posted=past_24_hours, sort_by=date\n"
+            "- easy_apply must always be an explicit boolean — never omit it\n"
+            "- Location strategies:\n"
+            "  NCR (omit work_type — all types accepted): 'New Delhi, Delhi, India', "
+            "'Noida, Uttar Pradesh, India', 'Gurugram, Haryana, India'\n"
+            "  India remote: location='India', work_type=remote\n"
+            "- If the same company appears with both a backend and a fullstack opening, keep only the backend role\n"
+            "- Deduplicate job IDs across all searches\n"
             "- Return a clean numbered list: job ID | title | company | location"
         ),
         tools=tools or [],
         llm=_llm(effective),
         verbose=True,
         allow_delegation=False,
+        max_iter=40,
     )
 
 
@@ -247,7 +285,7 @@ def build_job_match_agent(tools: list = None, model: str = None) -> Agent:
     Fetches full job details and scores each against Piyush's profile.
     Requires linkedin MCP tools (get_job_details) injected at runtime.
     """
-    effective = _resolve_model(model, "MATCH_MODEL", _AGENT_DEFAULT)
+    effective = _resolve_model(model, "MATCH_MODEL", _MATCH_DEFAULT)
     profile_json = json.dumps(
         {"experience": EXPERIENCE, "skills": SKILLS},
         indent=2,
@@ -298,7 +336,7 @@ def build_job_match_agent(tools: list = None, model: str = None) -> Agent:
 
 
 def build_email_agent(model: str = None) -> Agent:
-    effective = _resolve_model(model, "EMAIL_MODEL", _AGENT_DEFAULT)
+    effective = _resolve_model(model, "EMAIL_MODEL", _EMAIL_DEFAULT)
     backstory = (
         f"You write cold outreach emails for {PERSONAL['name']}, a Senior Backend Engineer with 8+ years of experience.\n\n"
         "## TONE\n"

@@ -69,7 +69,7 @@ source .venv/bin/activate     # macOS / Linux
 pip install -r requirements.txt
 ```
 
-> **Note:** `crewai[anthropic]` (the `[anthropic]` extra) is required — it installs the native Anthropic provider used by the resume agent. Plain `crewai` without the extra will fail at runtime.
+> **Note:** Two extras are required — `crewai[anthropic,litellm]`. The `[anthropic]` extra installs the native Anthropic provider used by the resume agent. The `[litellm]` extra enables Groq, Together AI, Fireworks, OpenRouter, and any other non-native provider. Plain `crewai` without these extras will fail at runtime.
 
 ### 3 — Install Playwright's Chromium browser
 
@@ -190,11 +190,13 @@ Each agent uses its own default model tuned for cost vs. quality. You can overri
 | Agent | Default model | Rationale | Est. cost/run |
 |---|---|---|---|
 | Resume | `anthropic/claude-haiku-4-5-20251001` | Strict HTML with 10+ rules — needs reliable instruction following | ~$0.014 |
-| Job Search | `groq/llama-3.3-70b-versatile` | Tool calling + list output — 70B handles it, free API | $0.00 |
-| Job Match | `groq/llama-3.3-70b-versatile` | Structured JSON evaluation — 70B handles it, free API | $0.00 |
-| Email | `groq/llama-3.3-70b-versatile` | Free-form creative writing — no strict constraints | $0.00 |
+| Job Search | `anthropic/claude-haiku-4-5-20251001` | Multi-turn tool calling (LinkedIn MCP) — context grows with each tool result and exceeds Groq's free 12k TPM | ~$0.005 |
+| Job Match | `anthropic/claude-haiku-4-5-20251001` | Fetches 8-10 full JDs via tool calls — large accumulated context | ~$0.010 |
+| Email | `groq/llama-3.3-70b-versatile` | Short free-form text, no tool calls — fits Groq's free tier comfortably | $0.00 |
 
-**Total per full `apply` run: ~$0.014** (one resume per matched job).
+**Total per full `apply` run: ~$0.029 + $0.014 per matched job** (search+match once, one resume per match).
+
+> **Why not Groq for search/match?** Groq's free tier allows 12,000 tokens/minute. A single tool-calling pass (system prompt + profile JSON + accumulated LinkedIn tool results) can exceed this in one request. Use `SEARCH_MODEL` / `MATCH_MODEL` env vars to override if you have a paid Groq plan.
 
 ### Override priority
 
